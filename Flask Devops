@@ -1,0 +1,129 @@
+app/app.py
+python
+Copy
+Edit
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Hello from Flask in a Docker container with CI/CD!"
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
+2. requirements.txt
+nginx
+Copy
+Edit
+flask
+3. Dockerfile
+Dockerfile
+Copy
+Edit
+FROM python:3.10-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY app/ app/
+
+EXPOSE 5000
+CMD ["python", "app/app.py"]
+4. .flake8
+ini
+Copy
+Edit
+[flake8]
+max-line-length = 88
+exclude = .git,__pycache__,.venv
+5. .github/workflows/ci-cd.yml
+yaml
+Copy
+Edit
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8
+
+    - name: Lint with flake8
+      run: |
+        flake8 app/
+
+    - name: Build Docker image
+      run: docker build -t flask-ci-cd .
+
+    # Optional: Push to Docker Hub
+    # - name: Log in to Docker Hub
+    #   uses: docker/login-action@v3
+    #   with:
+    #     username: ${{ secrets.DOCKER_USERNAME }}
+    #     password: ${{ secrets.DOCKER_PASSWORD }}
+
+    # - name: Tag and Push
+    #   run: |
+    #     docker tag flask-ci-cd yourdockerhubusername/flask-ci-cd:latest
+    #     docker push yourdockerhubusername/flask-ci-cd:latest
+📝 6. README.md (optional but recommended)
+markdown
+Copy
+Edit
+# Flask CI/CD with GitHub Actions & Docker
+
+This is a simple Flask web app that demonstrates a DevOps pipeline using:
+
+- Python & Flask
+- Docker
+- GitHub Actions (CI/CD)
+- Linting with flake8
+
+## 🔧 CI/CD Flow
+1. Lint the code
+2. Build the Docker image
+3. (Optional) Push the image to Docker Hub
+
+## 🛠️ To Run Locally
+```bash
+docker build -t flask-ci-cd .
+docker run -p 5000:5000 flask-ci-cd
+Visit: http://localhost:5000
+
+yaml
+Copy
+Edit
+
+---
+
+### 📤 Next Steps: Pushing to GitHub
+
+1. Create a new repository on [GitHub](https://github.com/new) — name it something like `flask-ci-cd`.
+2. On your machine:
+```bash
+git init
+git remote add origin https://github.com/yourusername/flask-ci-cd.git
+git add .
+git commit -m "Initial commit for Flask CI/CD project"
+git branch -M main
+git push -u origin main
